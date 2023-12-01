@@ -410,6 +410,12 @@ typedef utf8proc_int32_t (*utf8proc_custom_func)(utf8proc_int32_t codepoint, voi
  */
 UTF8PROC_DLLEXPORT extern const utf8proc_int8_t utf8proc_utf8class[256];
 
+typedef void* (*custom_malloc_t)(size_t);
+typedef void* (*custom_realloc_t)(void*, size_t);
+typedef void (*custom_free_t)(void*);
+
+UTF8PROC_DLLEXPORT void utf8proc_set_custom_allocators(custom_malloc_t, custom_realloc_t, custom_free_t);
+
 /**
  * Returns the utf8proc API version as a string MAJOR.MINOR.PATCH
  * (http://semver.org format), possibly with a "-dev" suffix for

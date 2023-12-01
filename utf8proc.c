@@ -96,6 +96,37 @@ UTF8PROC_DLLEXPORT const utf8proc_int8_t utf8proc_utf8class[256] = {
    be different, being based on ABI compatibility.): */
 #define STRINGIZEx(x) #x
 #define STRINGIZE(x) STRINGIZEx(x)
+
+
+static custom_malloc_t s_custom_malloc = &malloc;
+static custom_realloc_t s_custom_realloc = &realloc;
+static custom_free_t s_custom_free = &free;
+
+
+UTF8PROC_DLLEXPORT void utf8proc_set_custom_allocators(custom_malloc_t malloc_, custom_realloc_t realloc_, custom_free_t free_) {
+  s_custom_malloc = malloc_;
+  s_custom_realloc = realloc_;
+  s_custom_free = free_;
+}
+
+void* custom_malloc(size_t size) {
+  if (s_custom_malloc == NULL)
+    return NULL;
+  return (*s_custom_malloc)( size );
+}
+
+void* custom_realloc(void* ptr, size_t size) {
+  if (s_custom_realloc == NULL)
+    return NULL;
+
+  return (*s_custom_realloc)(ptr, size);
+}
+
+void custom_free(void* ptr) {
+  if (s_custom_free != NULL)
+    (*s_custom_free)(ptr);
+}
+
 UTF8PROC_DLLEXPORT const char *utf8proc_version(void) {
   return STRINGIZE(UTF8PROC_VERSION_MAJOR) "." STRINGIZE(UTF8PROC_VERSION_MINOR) "." STRINGIZE(UTF8PROC_VERSION_PATCH) "";
 }
