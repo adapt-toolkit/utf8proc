@@ -97,9 +97,13 @@ UTF8PROC_DLLEXPORT const utf8proc_int8_t utf8proc_utf8class[256] = {
 #define STRINGIZEx(x) #x
 #define STRINGIZE(x) STRINGIZEx(x)
 
+void* realloc_wrapper( void* ptr, size_t _old_size, size_t new_size )
+{
+    return realloc( ptr, new_size );
+}
 
 static custom_malloc_t s_custom_malloc = &malloc;
-static custom_realloc_t s_custom_realloc = &realloc;
+static custom_realloc_t s_custom_realloc = &realloc_wrapper;
 static custom_free_t s_custom_free = &free;
 
 
@@ -115,11 +119,11 @@ void* custom_malloc(size_t size) {
   return (*s_custom_malloc)( size );
 }
 
-void* custom_realloc(void* ptr, size_t size) {
+void* custom_realloc(void* ptr, size_t old_size, size_t new_size) {
   if (s_custom_realloc == NULL)
     return NULL;
 
-  return (*s_custom_realloc)(ptr, size);
+  return (*s_custom_realloc)(ptr, old_size, new_size);
 }
 
 void custom_free(void* ptr) {
@@ -789,21 +793,22 @@ UTF8PROC_DLLEXPORT utf8proc_ssize_t utf8proc_map_custom(
   *dstptr = NULL;
   result = utf8proc_decompose_custom(str, strlen, NULL, 0, options, custom_func, custom_data);
   if (result < 0) return result;
-  buffer = (utf8proc_int32_t *) malloc(((utf8proc_size_t)result) * sizeof(utf8proc_int32_t) + 1);
+  size_t allocated_size = ((utf8proc_size_t)result) * sizeof(utf8proc_int32_t) + 1;
+  buffer = (utf8proc_int32_t *) custom_malloc(allocated_size);
   if (!buffer) return UTF8PROC_ERROR_NOMEM;
   result = utf8proc_decompose_custom(str, strlen, buffer, result, options, custom_func, custom_data);
   if (result < 0) {
-    free(buffer);
+    custom_free(buffer);
     return result;
   }
   result = utf8proc_reencode(buffer, result, options);
   if (result < 0) {
-    free(buffer);
+    custom_free(buffer);
     return result;
   }
   {
     utf8proc_int32_t *newptr;
-    newptr = (utf8proc_int32_t *) realloc(buffer, (size_t)result+1);
+    newptr = (utf8proc_int32_t *) custom_realloc(buffer, allocated_size, (size_t)result+1);
     if (newptr) buffer = newptr;
   }
   *dstptr = (utf8proc_uint8_t *)buffer;
