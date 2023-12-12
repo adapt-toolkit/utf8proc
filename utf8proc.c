@@ -97,7 +97,7 @@ UTF8PROC_DLLEXPORT const utf8proc_int8_t utf8proc_utf8class[256] = {
 #define STRINGIZEx(x) #x
 #define STRINGIZE(x) STRINGIZEx(x)
 
-void* realloc_wrapper( void* ptr, size_t _old_size, size_t new_size )
+void* realloc_wrapper( void* ptr, __attribute__((unused)) size_t _old_size, size_t new_size )
 {
     return realloc( ptr, new_size );
 }
